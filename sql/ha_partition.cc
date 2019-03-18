@@ -6182,6 +6182,22 @@ int ha_partition::handle_ordered_index_scan(uchar *buf, bool reverse_order)
       error= file->read_range_first(m_start_key.key? &m_start_key: NULL,
                                     end_range, eq_range, TRUE);
       memcpy(rec_buf_ptr, table->record[0], m_rec_length);
+      {
+        Field **vfield_ptr, *vf;
+        for (vfield_ptr= table->vfield; *vfield_ptr; vfield_ptr++)
+        {
+          vf= (*vfield_ptr);
+          if (!(vf->flags & BLOB_FLAG))
+          {
+            continue;
+          }
+          my_ptrdiff_t diff= rec_buf_ptr - table->record[0];
+//           uint32 packlength= vf->store_length(vf->ptr + diff, vf->packlength, 0);
+          vf->move_field_offset(diff);
+          bzero(vf->ptr, 4);
+          vf->move_field_offset(0 - diff);
+        }
+      }
       reverse_order= FALSE;
       break;
     }
