@@ -39,6 +39,7 @@ Created 9/17/2000 Heikki Tuuri
 
 #include "sql_list.h"
 #include "sql_cmd.h"
+#include "rem0rec.h"
 
 extern ibool row_rollback_on_timeout;
 
@@ -873,6 +874,13 @@ public:
     }
   }
 };
+
+ATTRIBUTE_COLD
+void innobase_report_computed_value_failed(dtuple_t *row)
+{
+  ib::error() << "Compute virtual column values failed for "
+              << rec_printer(row);
+}
 
 /** Get the computed value by supplying the base column values.
 @param[in,out]	row		the data row
