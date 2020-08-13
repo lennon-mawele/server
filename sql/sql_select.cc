@@ -591,6 +591,28 @@ void remove_redundant_subquery_clauses(st_select_lex *subq_select_lex)
   }
 
   /*
+    If we are reading UNION output and the UNION is in the
+    IN/ANY/ALL/EXISTS subquery, then ORDER BY is redundant and hence should
+    be removed.
+    Example:
+     select ... col IN (select col2 FROM t1 union select col3 from t2 ORDER BY 1)
+
+    (as for ORDER BY ... LIMIT, it currently not supported inside
+     IN/ALL/ANY subqueries)
+    (For non-UNION this removal of ORDER BY clause is done in
+     check_and_do_in_subquery_rewrites())
+  */
+  if (subq_select_lex->order_list.elements)
+  {
+    for (ORDER *ord= subq_select_lex->order_list.first; ord; ord= ord->next)
+    {
+      (*ord->item)->walk(&Item::eliminate_subselect_processor, FALSE, NULL);
+    }
+    subq_select_lex->join->order= NULL;
+    subq_select_lex->order_list.empty();
+  }
+
+  /*
     Remove GROUP BY if there are no aggregate functions and no HAVING
     clause
   */

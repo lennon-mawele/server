@@ -3167,10 +3167,20 @@ void st_select_lex_unit::set_limit(st_select_lex *sl)
 bool st_select_lex_unit::union_needs_tmp_table()
 {
   return union_distinct != NULL ||
-    global_parameters()->order_list.elements != 0 ||
+         (global_parameters()->order_list.elements != 0 &&
+          !is_order_by_clause_redundant())||
     thd->lex->sql_command == SQLCOM_INSERT_SELECT ||
     thd->lex->sql_command == SQLCOM_REPLACE_SELECT;
-}  
+}
+
+bool st_select_lex_unit::is_order_by_clause_redundant()
+{
+  if (is_union() && item &&
+      (item->is_in_predicate() || item->is_exists_predicate()))
+    return true;
+  return false;
+}
+
 
 /**
   @brief Set the initial purpose of this TABLE_LIST object in the list of used
@@ -4678,7 +4688,8 @@ int st_select_lex_unit::save_union_explain(Explain_query *output)
     eu->add_select(sl->select_number);
 
   eu->fake_select_type= "UNION RESULT";
-  eu->using_filesort= MY_TEST(global_parameters()->order_list.first);
+  eu->using_filesort= MY_TEST(global_parameters()->order_list.elements &&
+                              !is_order_by_clause_redundant());
   eu->using_tmp= union_needs_tmp_table();
 
   // Save the UNION node
