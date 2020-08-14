@@ -1872,7 +1872,7 @@ JOIN::optimize_inner()
     {
       /*
         Item_cond_and can't be fixed after creation, so we do not check
-        conds->is_fixed()
+        conds->fixed()
       */
       conds->fix_fields(thd, &conds);
       conds->change_ref_to_fields(thd, tables_list);
@@ -11698,7 +11698,7 @@ make_join_select(JOIN *join,SQL_SELECT *select,COND *cond)
               Yet attributes of the just built condition are not needed.
               Thus we call sel->cond->quick_fix_field for safety.
 	    */
-	    if (sel->cond && !sel->cond->is_fixed())
+	    if (sel->cond && !sel->cond->fixed())
 	      sel->cond->quick_fix_field();
 
 	    if (sel->test_quick_select(thd, tab->keys,
@@ -16405,7 +16405,7 @@ simplify_joins(JOIN *join, List<TABLE_LIST> *join_list, COND *conds, bool top,
           conds= and_conds(join->thd, conds, table->on_expr);
           conds->top_level_item();
           /* conds is always a new item as both cond and on_expr existed */
-          DBUG_ASSERT(!conds->is_fixed());
+          DBUG_ASSERT(!conds->fixed());
           conds->fix_fields(join->thd, &conds);
         }
         else
@@ -17606,7 +17606,7 @@ Item_func_isnull::remove_eq_conds(THD *thd, Item::cond_result *cond_value,
           cond= new_cond;
           /*
             Item_func_eq can't be fixed after creation so we do not check
-            cond->is_fixed(), also it do not need tables so we use 0 as second
+            cond->fixed(), also it do not need tables so we use 0 as second
             argument.
           */
           cond->fix_fields(thd, &cond);
@@ -19345,7 +19345,7 @@ bool Virtual_tmp_table::sp_set_all_fields_from_item_list(THD *thd,
 
 bool Virtual_tmp_table::sp_set_all_fields_from_item(THD *thd, Item *value)
 {
-  DBUG_ASSERT(value->is_fixed());
+  DBUG_ASSERT(value->fixed());
   DBUG_ASSERT(value->cols() == s->fields);
   for (uint i= 0; i < value->cols(); i++)
   {
@@ -24414,7 +24414,7 @@ find_order_in_list(THD *thd, Ref_ptr_array ref_pointer_array,
     inspite of that fix_fields() calls find_item_in_list() one more
     time.
 
-    We check order_item->is_fixed() because Item_func_group_concat can put
+    We check order_item->fixed() because Item_func_group_concat can put
     arguments for which fix_fields already was called.    
   */
   if (order_item->fix_fields_if_needed_for_order_by(thd, order->item) ||
@@ -25731,7 +25731,7 @@ static bool add_ref_to_table_cond(THD *thd, JOIN_TAB *join_tab)
   }
   if (unlikely(thd->is_fatal_error))
     DBUG_RETURN(TRUE);
-  if (!cond->is_fixed())
+  if (!cond->fixed())
   {
     Item *tmp_item= (Item*) cond;
     cond->fix_fields(thd, &tmp_item);
@@ -27141,7 +27141,7 @@ static void select_describe(JOIN *join, bool need_tmp_table, bool need_order,
       for such queries, we'll get here before having called
       subquery_expr->fix_fields(), which will cause failure to
     */
-    if (unit->item && !unit->item->is_fixed())
+    if (unit->item && !unit->item->fixed())
     {
       Item *ref= unit->item;
       if (unit->item->fix_fields(thd, &ref))
