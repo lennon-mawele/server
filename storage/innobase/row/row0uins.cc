@@ -91,8 +91,7 @@ row_undo_ins_remove_clust_rec(
 
 	online = dict_index_is_online_ddl(index);
 	if (online) {
-		ut_ad(node->trx->dict_operation_lock_mode
-		      != RW_X_LATCH);
+		ut_ad(!node->trx->dict_operation_lock_mode);
 		ut_ad(node->table->id != DICT_INDEXES_ID);
 		mtr_s_lock(dict_index_get_lock(index), &mtr);
 	}
