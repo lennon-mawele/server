@@ -2480,26 +2480,11 @@ int SQL_SELECT::test_quick_select(THD *thd, key_map keys_to_use,
     {
       KEY_PART_INFO *key_part_info;
       uint n_key_parts= head->actual_n_key_parts(key_info);
-      bool vf_blob= false;
 
       if (!keys_to_use.is_set(idx))
 	continue;
       if (key_info->flags & HA_FULLTEXT)
 	continue;    // ToDo: ft-keys in non-ft ranges, if possible   SerG
-
-      key_part_info= key_info->key_part;
-      for (uint part= 0; part < n_key_parts; part++, key_part_info++)
-      {
-        Field *f= key_part_info->field;
-        if (f->vcol_info && f->real_type() == MYSQL_TYPE_BLOB)
-        {
-          vf_blob= true;
-          break;
-        }
-      }
-
-      if (vf_blob)
-        continue;
 
       param.key[param.keys]=key_parts;
       key_part_info= key_info->key_part;
