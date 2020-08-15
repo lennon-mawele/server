@@ -603,16 +603,34 @@ int key_rec_cmp(void *key_p, uchar *first_rec, uchar *second_rec)
         else
           goto next_loop; /* Both were NULL */
       }
-      /*
-        No null values in the fields
-        We use the virtual method cmp_max with a max length parameter.
-        For most field types this translates into a cmp without
-        max length. The exceptions are the BLOB and VARCHAR field types
-        that take the max length into account.
-      */
-      if ((result= field->cmp_prefix(field->ptr+first_diff, field->ptr+sec_diff,
-                                     key_part->length)))
-        DBUG_RETURN(result);
+      if (field->real_type() == MYSQL_TYPE_BLOB && field->vcol_info)
+      {
+        TABLE *table= field->table;
+        Field_blob *f= static_cast<Field_blob *>(field);
+        Field_blob f1(*f);
+        Field_blob f2(*f);
+        uchar *rec_save= table->record[0];
+        table->record[0]= first_rec;
+        table->update_virtual_field(&f1);
+        table->record[0]= second_rec;
+        table->update_virtual_field(&f2);
+        table->record[0]= rec_save;
+        if ((result= f1.cmp_prefix(f1.ptr, f2.ptr, key_part->length)))
+          DBUG_RETURN(result);
+      }
+      else
+      {
+        /*
+          No null values in the fields
+          We use the virtual method cmp_max with a max length parameter.
+          For most field types this translates into a cmp without
+          max length. The exceptions are the BLOB and VARCHAR field types
+          that take the max length into account.
+        */
+        if ((result= field->cmp_prefix(field->ptr+first_diff, field->ptr+sec_diff,
+                                      key_part->length)))
+          DBUG_RETURN(result);
+      }
 next_loop:
       key_part++;
       key_part_num++;
